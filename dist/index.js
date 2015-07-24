@@ -145,8 +145,10 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
 
         if (dateUpdates % 2 === 1) {
           scope.$parent.start = scope.date;
+          bindViews[0] = scope.date.getTime();
         } else if (dateUpdates % 2 === 0) {
           scope.$parent.end = scope.date;
+          bindViews[1] = scope.date.getTime();
           $(element.parents('.date-range')).scope().showRange = false
         }
 
@@ -256,6 +258,17 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
         return datePickerUtils.isSameDay(scope.model, date);
       };
 
+      scope.isOpening = function(date) {
+        var current = new Date(bindViews[0]).setHours(0, 0, 0, 0);
+        var previous = new Date(date).setHours(0, 0, 0, 0);
+        return current === previous;
+      };
+
+      scope.isClosing = function(date) {
+        var current = new Date(bindViews[1]).setHours(0, 0, 0, 0);
+        var previous = new Date(date).setHours(0, 0, 0, 0);
+        return current === previous;
+      };
       scope.isSameHour = function (date) {
         return datePickerUtils.isSameHour(scope.model, date);
       };
@@ -674,11 +687,9 @@ angular.module("datePicker").run(["$templateCache", function($templateCache) {
     "\n" +
     "      <tr ng-repeat=\"week in weeks\">\r" +
     "\n" +
-    "        <td ng-repeat=\"day in week\">\r" +
+    "        <td ng-repeat=\"day in week\" ng-class=\"{'now':isNow(day),'opening':isOpening(day),'closing':isClosing(day),'active':isSameDay(day),'disabled':(day.getMonth()!=date.getMonth()),'after':isAfter(day),'before':isBefore(day)}\">\r" +
     "\n" +
     "          <span\r" +
-    "\n" +
-    "            ng-class=\"{'now':isNow(day),'active':isSameDay(day),'disabled':(day.getMonth()!=date.getMonth()),'after':isAfter(day),'before':isBefore(day)}\"\r" +
     "\n" +
     "            ng-click=\"setDate(day)\" ng-bind=\"day.getDate()\"></span>\r" +
     "\n" +
