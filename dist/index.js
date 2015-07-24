@@ -28,8 +28,10 @@ Module.filter('time',function () {
 });
 
 Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function datePickerDirective(datePickerConfig, datePickerUtils) {
-
   //noinspection JSUnusedLocalSymbols
+  var bindViews = [];
+  var dateUpdates = 0;
+
   return {
     // this is a bug ?
     require:'?ngModel',
@@ -80,7 +82,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
       //end min, max date validator
 
       /** @namespace attrs.minView, attrs.maxView */
-      scope.views =scope.views.slice(
+      scope.views = scope.views.slice(
         scope.views.indexOf(attrs.maxView || 'year'),
         scope.views.indexOf(attrs.minView || 'minutes')+1
       );
@@ -96,10 +98,14 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
       };
 
       scope.setDate = function (date) {
+        dateUpdates++;
+
         if(attrs.disabled) {
           return;
         }
         scope.date = date;
+
+
         // change next view
         var nextView = scope.views[scope.views.indexOf(scope.view) + 1];
         if ((!nextView || partial) || scope.model) {
@@ -112,30 +118,39 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
 
           var view = partial ? 'minutes' : scope.view;
           //noinspection FallThroughInSwitchStatementJS
-          switch (view) {
-          case 'minutes':
-            scope.model.setMinutes(date.getMinutes());
-          /*falls through*/
-          case 'hours':
-            scope.model.setHours(date.getHours());
-          /*falls through*/
-          case 'date':
-            scope.model.setDate(date.getDate());
-          /*falls through*/
-          case 'month':
-            scope.model.setMonth(date.getMonth());
-          /*falls through*/
-          case 'year':
-            scope.model.setFullYear(date.getFullYear());
-          }
-          scope.$emit('setDate', scope.model, scope.view);
+          //switch (view) {
+          //case 'minutes':
+          //  scope.model.setMinutes(date.getMinutes());
+          ///*falls through*/
+          //case 'hours':
+          //  scope.model.setHours(date.getHours());
+          ///*falls through*/
+          //case 'date':
+          //  scope.model.setDate(date.getDate());
+          ///*falls through*/
+          //case 'month':
+          //  scope.model.setMonth(date.getMonth());
+          ///*falls through*/
+          //case 'year':
+          //  scope.model.setFullYear(date.getFullYear());
+          //}
+
+          //scope.$emit('setDate', scope.model, scope.view);
+          //console.log('setdate');
         }
 
         if (nextView) {
           scope.setView(nextView);
         }
 
-        if(!nextView && attrs.autoClose === 'true'){
+        if (dateUpdates % 2 === 1) {
+          scope.$parent.start = scope.date;
+        } else if (dateUpdates % 2 === 0) {
+          scope.$parent.end = scope.date;
+          $(element.parents('.date-range')).scope().showRange = false
+        }
+
+        if ((!nextView && attrs.autoClose === 'true')) {
           element.addClass('hidden');
           scope.$emit('hidePicker');
         }
@@ -143,6 +158,10 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
 
       function update() {
         var view = scope.view;
+
+        if (bindViews.indexOf(scope.model.getTime()) === -1 ) {
+          bindViews.push(scope.model.getTime());
+        }
 
         if (scope.model && !arrowClick) {
           scope.date = new Date(scope.model);
@@ -159,7 +178,11 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
           break;
         case 'date':
           scope.weekdays = scope.weekdays || datePickerUtils.getDaysOfWeek();
-          scope.weeks = datePickerUtils.getVisibleWeeks(date);
+          var whichMonth = date;
+          if (bindViews.indexOf(date.getTime()) === 1) {
+            whichMonth = new Date(date.setMonth(date.getMonth() + 1));
+          }
+          scope.weeks = datePickerUtils.getVisibleWeeks(whichMonth);
           break;
         case 'hours':
           scope.hours = datePickerUtils.getVisibleHours(date);
@@ -568,6 +591,7 @@ Module.directive('dateTime', ['$compile', '$document', '$filter', 'dateTimeConfi
           container = null;
         }
       }
+
 
       function showPicker() {
         if (picker) {
