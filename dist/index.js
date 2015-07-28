@@ -31,7 +31,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
   //noinspection JSUnusedLocalSymbols
   var bindViews = [];
   var dateUpdates = 0;
-
+  var instances = [];
   return {
     // this is a bug ?
     require:'?ngModel',
@@ -42,7 +42,6 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
       before: '=?'
     },
     link: function (scope, element, attrs, ngModel) {
-
       var arrowClick = false;
 
       scope.date = new Date(scope.model || new Date());
@@ -50,6 +49,9 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
       scope.view = attrs.view || datePickerConfig.view;
       scope.now = new Date();
       scope.template = attrs.template || datePickerConfig.template;
+
+      instances.push(scope);
+      bindViews.push(scope.date.getTime());
 
       var step = parseInt(attrs.step || datePickerConfig.step, 10);
       var partial = !!attrs.partial;
@@ -136,7 +138,6 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
           //}
 
           //scope.$emit('setDate', scope.model, scope.view);
-          //console.log('setdate');
         }
 
         if (nextView) {
@@ -158,12 +159,8 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
         }
       };
 
-      function update() {
+      scope.update = function () {
         var view = scope.view;
-
-        if (bindViews.indexOf(scope.model.getTime()) === -1 ) {
-          bindViews.push(scope.model.getTime());
-        }
 
         if (scope.model && !arrowClick) {
           scope.date = new Date(scope.model);
@@ -184,7 +181,8 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
           if (bindViews.indexOf(date.getTime()) === 1) {
             whichMonth = new Date(date.setMonth(date.getMonth() + 1));
           }
-          scope.weeks = datePickerUtils.getVisibleWeeks(whichMonth);
+
+          scope.weeks = datePickerUtils.getVisibleWeeks(date);
           break;
         case 'hours':
           scope.hours = datePickerUtils.getVisibleHours(date);
@@ -193,7 +191,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
           scope.minutes = datePickerUtils.getVisibleMinutes(date, step);
           break;
         }
-      }
+      };
 
       function watch() {
         if (scope.view !== 'date') {
@@ -202,12 +200,18 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
         return scope.date ? scope.date.getMonth() : null;
       }
 
+      scope.$watch(watch, scope.update);
 
-      scope.$watch(watch, update);
+      scope.go = function(vector) {
+        instances.forEach( function(instance, idx) {
+          instance.next(vector, idx);
+        });
+      };
 
-      scope.next = function (delta) {
+      scope.next = function (delta, idx) {
         var date = scope.date;
         delta = delta || 1;
+
         switch (scope.view) {
         case 'year':
         /*falls through*/
@@ -222,7 +226,11 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
             date.setDate(0);
           }
           */
+          date.setDate(1);
           date.setMonth(date.getMonth() + delta);
+
+          scope.date  = date;
+          scope.weeks = datePickerUtils.getVisibleWeeks(date);
           break;
         case 'hours':
         /*falls through*/
@@ -230,12 +238,12 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
           date.setHours(date.getHours() + delta);
           break;
         }
+
         arrowClick = true;
-        update();
       };
 
-      scope.prev = function (delta) {
-        return scope.next(-delta || -1);
+      scope.prev = function (delta, idx) {
+        return scope.next(-delta || -1, idx);
       };
 
       scope.isAfter = function (date) {
@@ -260,7 +268,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
 
       scope.isOpening = function(date) {
         var current = new Date(bindViews[0]).setHours(0, 0, 0, 0);
-        var previous = new Date(date).setHours(0, 0, 0, 0);
+        var previous = new Date(date.getTime()).setHours(0, 0, 0, 0);
         return current === previous;
       };
 
@@ -667,11 +675,11 @@ angular.module("datePicker").run(["$templateCache", function($templateCache) {
     "\n" +
     "      <tr>\r" +
     "\n" +
-    "        <th ng-click=\"prev()\">&lsaquo;</th>\r" +
+    "        <th ng-click=\"go(-1)\" class=\"prev-month\">&lsaquo;</th>\r" +
     "\n" +
     "        <th colspan=\"5\" class=\"switch\" ng-click=\"setView('month')\" ng-bind=\"date|date:'yyyy MMMM'\"></th>\r" +
     "\n" +
-    "        <th ng-click=\"next()\">&rsaquo;</i></th>\r" +
+    "        <th ng-click=\"go(1)\" class=\"next-month\">&rsaquo;</i></th>\r" +
     "\n" +
     "      </tr>\r" +
     "\n" +
