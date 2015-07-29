@@ -178,7 +178,9 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
         case 'date':
           scope.weekdays = scope.weekdays || datePickerUtils.getDaysOfWeek();
           var whichMonth = date;
-          if (bindViews.indexOf(date.getTime()) === 1) {
+          if (bindViews.indexOf(date.getTime()) === 1 &&
+              new Date(bindViews[0]).getMonth() === new Date(bindViews[1]).getMonth()
+          ) {
             whichMonth = new Date(date.setMonth(date.getMonth() + 1));
           }
 
