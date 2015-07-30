@@ -147,6 +147,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
         if (dateUpdates % 2 === 1) {
           scope.$parent.start = scope.date;
           bindViews[0] = scope.date.getTime();
+          scope.$parent.end = bindViews[1] = scope.date.getTime();
         } else if (dateUpdates % 2 === 0) {
           scope.$parent.end = scope.date;
           bindViews[1] = scope.date.getTime();
@@ -697,7 +698,7 @@ angular.module("datePicker").run(["$templateCache", function($templateCache) {
     "\n" +
     "      <tr ng-repeat=\"week in weeks\">\r" +
     "\n" +
-    "        <td ng-repeat=\"day in week\" ng-class=\"{'now':isNow(day),'opening':isOpening(day),'closing':isClosing(day),'active':isSameDay(day),'disabled':(day.getMonth()!=date.getMonth()),'after':isAfter(day),'before':isBefore(day)}\">\r" +
+    "        <td ng-repeat=\"day in week\" ng-class=\"{'now':isNow(day),'opening':isOpening(day),'closing':isClosing(day),'active':isSameDay(day),'disabled':(day.getMonth()!=date.getMonth()),'disabled2':(day.getMonth()!=date.getMonth()+1),'after':isAfter(day),'before':isBefore(day)}\">\r" +
     "\n" +
     "          <span\r" +
     "\n" +
