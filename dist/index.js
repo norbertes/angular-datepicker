@@ -50,6 +50,11 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
       scope.now = new Date();
       scope.template = attrs.template || datePickerConfig.template;
 
+      if (instances.length === 2) {
+        bindViews = [];
+        dateUpdates = 0;
+        instances = [];
+      }
       instances.push(scope);
       bindViews.push(scope.date.getTime());
 
@@ -459,7 +464,7 @@ angular.module('datePicker').factory('datePickerUtils', function(){
 
 var Module = angular.module('datePicker');
 
-Module.directive('dateRange', function () {
+Module.directive('dateRange', ['$document', function ($document) {
   return {
     templateUrl: 'templates/daterange.html',
     scope: {
@@ -475,8 +480,8 @@ Module.directive('dateRange', function () {
       scope.end = new Date(scope.end || new Date());
 
       attrs.$observe('disabled', function(isDisabled){
-          scope.disableDatePickers = !!isDisabled;
-        });
+        scope.disableDatePickers = !!isDisabled;
+      });
       scope.$watch('start.getTime()', function (value) {
         if (value && scope.end && value > new Date(scope.end).getTime()) {
           scope.end = new Date(value);
@@ -487,9 +492,22 @@ Module.directive('dateRange', function () {
           scope.start = new Date(value);
         }
       });
+
+      var documentClickHandler = function (event) {
+        if ($(event.toElement).parents('.main-search').length === 0) {
+          scope.$parent.showRange = false;
+          scope.$parent.$digest();
+          $(element).removeClass('show');
+        }
+      };
+
+      $document.on('click', documentClickHandler);
+      scope.$on('$destroy', function () {
+          $document.off('click', documentClickHandler);
+      });
     }
   };
-});
+}]);
 
 'use strict';
 
