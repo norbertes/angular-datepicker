@@ -250,11 +250,11 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
       };
 
       scope.isAfter = function (date) {
-        return scope.after && datePickerUtils.isAfter(date, scope.after);
+        return bindViews[0] && datePickerUtils.isAfter(date, bindViews[0]);
       };
 
       scope.isBefore = function (date) {
-        return scope.before && datePickerUtils.isBefore(date, scope.before);
+        return bindViews[1] && datePickerUtils.isBefore(date, bindViews[1]);
       };
 
       scope.isSameMonth = function (date) {
@@ -478,7 +478,7 @@ Module.directive('dateRange', function () {
           scope.disableDatePickers = !!isDisabled;
         });
       scope.$watch('start.getTime()', function (value) {
-        if (value && scope.end && value > scope.end.getTime()) {
+        if (value && scope.end && value > new Date(scope.end).getTime()) {
           scope.end = new Date(value);
         }
       });
