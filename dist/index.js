@@ -464,7 +464,7 @@ angular.module('datePicker').factory('datePickerUtils', function(){
 
 var Module = angular.module('datePicker');
 
-Module.directive('dateRange', ['$document', function ($document) {
+Module.directive('dateRange', ['$document', '$timeout', function ($document, $timeout) {
   return {
     templateUrl: 'templates/daterange.html',
     scope: {
@@ -495,9 +495,12 @@ Module.directive('dateRange', ['$document', function ($document) {
 
       var documentClickHandler = function (event) {
         if ($(event.toElement).parents('.main-search').length === 0) {
-          scope.$parent.showRange = false;
-          scope.$parent.$digest();
-          $(element).removeClass('show');
+          $(element).removeClass('showOpacity');
+          $timeout(function(){
+            $(element).removeClass('show');
+            scope.$parent.showRange = false;
+            scope.$parent.$digest();
+          }, 450);
         }
       };
 
