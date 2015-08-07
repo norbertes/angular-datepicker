@@ -27,10 +27,12 @@ Module.filter('time',function () {
   };
 });
 
-Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function datePickerDirective(datePickerConfig, datePickerUtils) {
+Module.directive('datePicker',
+  ['datePickerConfig', 'datePickerUtils', '$timeout', function datePickerDirective(
+    datePickerConfig, datePickerUtils, $timeout
+  ) {
   //noinspection JSUnusedLocalSymbols
   var bindViews = [];
-  var dateUpdates = 0;
   var instances = [];
   return {
     // this is a bug ?
@@ -52,7 +54,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
 
       if (instances.length === 2) {
         bindViews = [];
-        dateUpdates = 0;
+        datePickerUtils.dateUpdates = 0;
         instances = [];
       }
       instances.push(scope);
@@ -105,7 +107,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
       };
 
       scope.setDate = function (date) {
-        dateUpdates++;
+        datePickerUtils.dateUpdates++;
 
         if(attrs.disabled) {
           return;
@@ -149,19 +151,26 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
           scope.setView(nextView);
         }
 
-        if (dateUpdates % 2 === 1) {
+        if (scope.$parent.$parent.focused1) {
           scope.$parent.start = scope.date;
           bindViews[0] = scope.date.getTime();
-          scope.$parent.end = bindViews[1] = scope.date.getTime();
-        } else if (dateUpdates % 2 === 0) {
+          //scope.$parent.end = bindViews[1] = scope.date.getTime();
+
+          scope.$parent.$parent.focused1 = false;
+          scope.$parent.$parent.focused2 = true;
+
+        } else if (scope.$parent.$parent.focused2) {
           scope.$parent.end = scope.date;
           bindViews[1] = scope.date.getTime();
-          $(element.parents('.date-range')).scope().showRange = false
+          if (bindViews[0] > bindViews[1]) {
+            bindViews[0] = bindViews[1];
+          }
+
+          $('body').click();
         }
 
         if ((!nextView && attrs.autoClose === 'true')) {
-          element.addClass('hidden');
-          scope.$emit('hidePicker');
+          $('body').click();
         }
       };
 
@@ -184,6 +193,7 @@ Module.directive('datePicker', ['datePickerConfig', 'datePickerUtils', function 
         case 'date':
           scope.weekdays = scope.weekdays || datePickerUtils.getDaysOfWeek();
           var whichMonth = date;
+
           if (bindViews.indexOf(date.getTime()) === 1 &&
               new Date(bindViews[0]).getMonth() === new Date(bindViews[1]).getMonth()
           ) {
@@ -326,6 +336,7 @@ angular.module('datePicker').factory('datePickerUtils', function(){
     date.setHours(0 - date.getTimezoneOffset() / 60, 0, 0, 0);
   };
   return {
+    dateUpdates: 0,
     getVisibleMinutes : function(date, step) {
       date = new Date(date || new Date());
       date = new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
@@ -464,7 +475,7 @@ angular.module('datePicker').factory('datePickerUtils', function(){
 
 var Module = angular.module('datePicker');
 
-Module.directive('dateRange', ['$document', '$timeout', function ($document, $timeout) {
+Module.directive('dateRange', ['$document', '$timeout', 'datePickerUtils', function ($document, $timeout, datePickerUtils) {
   return {
     templateUrl: 'templates/daterange.html',
     scope: {
@@ -495,12 +506,16 @@ Module.directive('dateRange', ['$document', '$timeout', function ($document, $ti
 
       var documentClickHandler = function (event) {
         if ($(event.toElement).parents('.main-search').length === 0) {
+          datePickerUtils.dateUpdates = 0;
+
           $(element).removeClass('showOpacity');
           $timeout(function(){
             $(element).removeClass('show');
+            scope.$parent.focused1 = false;
+            scope.$parent.focused2 = false;
             scope.$parent.showRange = false;
             scope.$parent.$digest();
-          }, 450);
+          }, 500);
         }
       };
 
