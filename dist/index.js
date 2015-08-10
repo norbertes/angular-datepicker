@@ -28,8 +28,8 @@ Module.filter('time',function () {
 });
 
 Module.directive('datePicker',
-  ['datePickerConfig', 'datePickerUtils', '$timeout', function datePickerDirective(
-    datePickerConfig, datePickerUtils, $timeout
+  ['datePickerConfig', 'datePickerUtils', '$window', function datePickerDirective(
+    datePickerConfig, datePickerUtils, $window
   ) {
   //noinspection JSUnusedLocalSymbols
   var bindViews = [];
@@ -64,8 +64,7 @@ Module.directive('datePicker',
       var partial = !!attrs.partial;
 
       //if ngModel, we can add min and max validators
-      if(ngModel)
-      {
+      if (ngModel) {
         if (angular.isDefined(attrs.minDate)) {
           var minVal;
           ngModel.$validators.min = function (value) {
@@ -154,7 +153,6 @@ Module.directive('datePicker',
         if (scope.$parent.$parent.focused1) {
           scope.$parent.start = scope.date;
           bindViews[0] = scope.date.getTime();
-          //scope.$parent.end = bindViews[1] = scope.date.getTime();
 
           scope.$parent.$parent.focused1 = false;
           scope.$parent.$parent.focused2 = true;
@@ -194,12 +192,14 @@ Module.directive('datePicker',
           scope.weekdays = scope.weekdays || datePickerUtils.getDaysOfWeek();
           var whichMonth = date;
 
-          if (bindViews.indexOf(date.getTime()) === 1 &&
-              new Date(bindViews[0]).getMonth() === new Date(bindViews[1]).getMonth()
-          ) {
-            whichMonth = new Date(date.setMonth(date.getMonth() + 1));
-          }
+          if ($window.outerWidth >= 768) {
 
+            if (bindViews.indexOf(date.getTime()) === 1 &&
+              new Date(bindViews[0]).getMonth() === new Date(bindViews[1]).getMonth()
+            ) {
+              whichMonth = new Date(date.setMonth(date.getMonth() + 1));
+            }
+          }
           scope.weeks = datePickerUtils.getVisibleWeeks(date);
           break;
         case 'hours':
@@ -475,7 +475,7 @@ angular.module('datePicker').factory('datePickerUtils', function(){
 
 var Module = angular.module('datePicker');
 
-Module.directive('dateRange', ['$document', '$timeout', 'datePickerUtils', function ($document, $timeout, datePickerUtils) {
+Module.directive('dateRange', ['$document', '$window', '$timeout', 'datePickerUtils', function ($document, $window, $timeout, datePickerUtils) {
   return {
     templateUrl: 'templates/daterange.html',
     scope: {
@@ -503,6 +503,28 @@ Module.directive('dateRange', ['$document', '$timeout', 'datePickerUtils', funct
           scope.start = new Date(value);
         }
       });
+
+      scope.checkVisible = function() {
+        if ($window.outerWidth >= 768) {
+          element[0].querySelector('[date-picker="start"]').style.display = 'block';
+          element[0].querySelector('[date-picker="end"]').style.display = 'block';
+          element[0].classList.remove('start', 'end');
+        } else {
+          if (scope.$parent.focused1) {
+            element[0].classList.add('start');
+            element[0].classList.remove('end');
+
+            element[0].querySelector('[date-picker="start"]').style.display = 'block';
+            element[0].querySelector('[date-picker="end"]').style.display = 'none';
+          } else if (scope.$parent.focused2) {
+            element[0].classList.remove('start');
+            element[0].classList.add('end');
+
+            element[0].querySelector('[date-picker="start"]').style.display = 'none';
+            element[0].querySelector('[date-picker="end"]').style.display = 'block';
+          }
+        }
+      };
 
       var documentClickHandler = function (event) {
         if ($(event.toElement).parents('.main-search').length === 0) {
@@ -925,13 +947,13 @@ angular.module("datePicker").run(["$templateCache", function($templateCache) {
     "\n" +
     "        <tr>\r" +
     "\n" +
-    "            <td valign=\"top\">\r" +
+    "            <td valign=\"top\" ng-class=\"{'visible':checkVisible()}\" >\r" +
     "\n" +
     "                <div date-picker=\"start\" ng-disabled=\"disableDatePickers\"  class=\"date-picker\" date after=\"start\" before=\"end\" min-view=\"date\" max-view=\"date\"></div>\r" +
     "\n" +
     "            </td>\r" +
     "\n" +
-    "            <td valign=\"top\">\r" +
+    "            <td valign=\"top\" ng-class=\"{'visible':checkVisible()}\" >\r" +
     "\n" +
     "                <div date-picker=\"end\" ng-disabled=\"disableDatePickers\"  class=\"date-picker\" date after=\"start\" before=\"end\"  min-view=\"date\" max-view=\"date\"></div>\r" +
     "\n" +
