@@ -150,14 +150,18 @@ Module.directive('datePicker',
           scope.setView(nextView);
         }
 
-        if (scope.$parent.$parent.focused1) {
+        if (scope.$parent.$parent.focused1 ||
+            scope.$parent.$parent.$parent.focused1
+        ) {
           scope.$parent.start = scope.date;
           bindViews[0] = scope.date.getTime();
 
           scope.$parent.$parent.focused1 = false;
           scope.$parent.$parent.focused2 = true;
+          scope.$parent.$parent.$parent.focused1 = false;
+          scope.$parent.$parent.$parent.focused2 = true;
 
-        } else if (scope.$parent.$parent.focused2) {
+        } else if (scope.$parent.$parent.focused2 || scope.$parent.$parent.$parent.focused2) {
           scope.$parent.end = scope.date;
           bindViews[1] = scope.date.getTime();
           if (bindViews[0] > bindViews[1]) {
@@ -192,7 +196,7 @@ Module.directive('datePicker',
           scope.weekdays = scope.weekdays || datePickerUtils.getDaysOfWeek();
           var whichMonth = date;
 
-          if ($window.outerWidth >= 768) {
+          if ($window.outerWidth >= 768 && !scope.$parent.singleDate) {
 
             if (bindViews.indexOf(date.getTime()) === 1 &&
               new Date(bindViews[0]).getMonth() === new Date(bindViews[1]).getMonth()
@@ -480,7 +484,8 @@ Module.directive('dateRange', ['$document', '$window', '$timeout', 'datePickerUt
     templateUrl: 'templates/daterange.html',
     scope: {
       start: '=',
-      end: '='
+      end: '=',
+      singleDate: '='
     },
     link: function (scope, element, attrs) {
 
@@ -505,18 +510,22 @@ Module.directive('dateRange', ['$document', '$window', '$timeout', 'datePickerUt
       });
 
       scope.checkVisible = function() {
-        if ($window.outerWidth >= 768) {
+
+        if ($window.outerWidth >= 768 && !scope.singleDate) {
           element[0].querySelector('[date-picker="start"]').style.display = 'block';
           element[0].querySelector('[date-picker="end"]').style.display = 'block';
           element[0].classList.remove('start', 'end');
+
         } else {
-          if (scope.$parent.focused1) {
+
+          if (scope.$parent.focused1 || scope.$parent.$parent.focused1) {
             element[0].classList.add('start');
             element[0].classList.remove('end');
 
             element[0].querySelector('[date-picker="start"]').style.display = 'block';
             element[0].querySelector('[date-picker="end"]').style.display = 'none';
-          } else if (scope.$parent.focused2) {
+
+          } else if (scope.$parent.focused2 || scope.$parent.$parent.focused2) {
             element[0].classList.remove('start');
             element[0].classList.add('end');
 
@@ -527,16 +536,24 @@ Module.directive('dateRange', ['$document', '$window', '$timeout', 'datePickerUt
       };
 
       var documentClickHandler = function (event) {
-        if ($(event.toElement).parents('.main-search').length === 0) {
+        if ($(event.toElement).parents('.main-search').length === 0 &&
+            $(event.toElement).parents('.reservation-general__time-limits').length === 0) {
           datePickerUtils.dateUpdates = 0;
 
           $(element).removeClass('showOpacity');
-          $timeout(function(){
+
+          $timeout(function() {
             $(element).removeClass('show');
+
             scope.$parent.focused1 = false;
             scope.$parent.focused2 = false;
+            scope.$parent.$parent.focused1 = false;
+            scope.$parent.$parent.focused2 = false;
+
             scope.$parent.showRange = false;
+            scope.$parent.$parent.showBookingRange = false;
             scope.$parent.$digest();
+
           }, 500);
         }
       };
