@@ -106,11 +106,15 @@ Module.directive('datePicker',
       };
 
       scope.setDate = function (date) {
-        datePickerUtils.dateUpdates++;
+        var todayMidnight = new Date().setHours(0,0,0,0);
+        var dateFromPast = date < todayMidnight;
 
-        if(attrs.disabled) {
+        if (attrs.disabled || dateFromPast) {
           return;
         }
+
+        datePickerUtils.dateUpdates++;
+
         scope.date = date;
 
 
