@@ -106,15 +106,11 @@ Module.directive('datePicker',
       };
 
       scope.setDate = function (date) {
-        var todayMidnight = new Date().setHours(0,0,0,0);
-        var dateFromPast = date < todayMidnight;
-
-        if (attrs.disabled || dateFromPast) {
-          return;
-        }
-
         datePickerUtils.dateUpdates++;
 
+        if(attrs.disabled) {
+          return;
+        }
         scope.date = date;
 
 
@@ -540,8 +536,8 @@ Module.directive('dateRange', ['$document', '$window', '$timeout', 'datePickerUt
       };
 
       var documentClickHandler = function (event) {
-        if ($(event.toElement).parents('.main-search').length === 0 &&
-            $(event.toElement).parents('.reservation-general__time-limits').length === 0) {
+        if ($(event.target).parents('.main-search').length === 0 &&
+            $(event.target).parents('.reservation-general__time-limits').length === 0) {
           datePickerUtils.dateUpdates = 0;
 
           $(element).removeClass('showOpacity');
@@ -560,7 +556,7 @@ Module.directive('dateRange', ['$document', '$window', '$timeout', 'datePickerUt
 
           }, 500);
         }
-      };
+      }
 
       $document.on('click', documentClickHandler);
       scope.$on('$destroy', function () {
